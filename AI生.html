@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎬 影视级 AI 提示词工作站</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-color: #0ea5e9;
+            --accent-glow: rgba(14, 165, 233, 0.4);
+            --tag-bg: rgba(51, 65, 85, 0.8);
+            --tag-hover: #38bdf8;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at top right, #1e293b, #0f172a);
+            color: var(--text-primary);
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        header {
+            text-align: left;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        header p {
+            color: var(--text-secondary);
+            margin: 5px 0 0 0;
+            font-size: 14px;
+        }
+
+        /* 编辑器区域 */
+        .editor-section {
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            position: sticky;
+            top: 20px;
+            z-index: 100;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 16px;
+            padding: 15px;
+            box-sizing: border-box;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            line-height: 1.5;
+        }
+
+        textarea:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        button.action-btn {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        button.action-btn:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        button.primary-btn {
+            background: var(--accent-color);
+            border: none;
+            font-weight: 600;
+        }
+
+        button.primary-btn:hover {
+            background: var(--tag-hover);
+            background: var(--accent-color);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        /* 标签库区域 */
+        .toolbox-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .category-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .category-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent-color);
+            margin-bottom: 12px;
+            border-bottom: 1px solid rgba(14, 165, 233, 0.2);
+            padding-bottom: 8px;
+        }
+
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tag {
+            background: var(--tag-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+
+        .tag:hover {
+            background: rgba(14, 165, 233, 0.1);
+            color: var(--text-primary);
+            border-color: var(--accent-color);
+            transform: translateY(-1px);
+        }
+
+        /* 弹窗提示 */
+        #toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #10b981;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 14px;
+            opacity: 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+            z-index: 1000;
+        }
+
+        #toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        
+        /* 针对小屏幕优化 */
+        @media (max-width: 768px) {
+            .toolbox-section { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🎬 影视级 AI 提示词工作站</h1>
+        <p>构建结构化的高品质 Prompt。点击下方标签，将自动插入到光标所在位置。</p>
+    </header>
+
+    <div class="editor-section">
+        <textarea id="promptEditor" placeholder="在此自由输入画面主体、环境动作等描述。将光标停留在需要插入提示词的位置，点击下方标签即可快速插入... (例如：一位穿着风衣的侦探站在雨中)"></textarea>
+        <div class="actions">
+            <button class="action-btn" onclick="clearText()">清空</button>
+            <button class="action-btn primary-btn" onclick="copyText()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                一键复制
+            </button>
+        </div>
+    </div>
+
+    <div class="toolbox-section" id="toolbox">
+        </div>
+</div>
+
+<div id="toast">复制成功！</div>
+
+<script>
+    const data = [
+        {
+            title: "🎥 景别体系",
+            tags: ["大远景 (ELS)", "远景 (LS)", "全景 (FS)", "牛仔镜头 (Cowboy Shot)", "中景 (MS)", "中近景 (MCU)", "近景 (CS)", "特写 (CU)", "极端特写 (ECU)"]
+        },
+        {
+            title: "📐 视角机位",
+            tags: ["平视/平拍", "仰拍/低角度", "俯拍/高角度", "航拍/上帝视角", "正俯视", "蚂蚁视角", "过肩镜头 (OTS)", "第一人称视角 (POV)", "打破第四面墙"]
+        },
+        {
+            title: "🖼️ 画面构图",
+            tags: ["三分法则", "黄金分割", "中心构图", "对称构图", "对角线构图", "引导线构图", "单点透视", "S型曲线", "留白构图", "满屏构图", "框架构图", "前景构图", "开放式构图", "封闭式构图", "并置构图"]
+        },
+        {
+            title: "💡 光线方向",
+            tags: ["主光 (Key Light)", "辅光 (Fill Light)", "伦勃朗光", "蝴蝶光", "侧面光", "环形光", "宽光", "窄光", "逆光/背光", "轮廓光/边缘光", "顶光", "底光/鬼光", "顺光/正面光"]
+        },
+        {
+            title: "✨ 光线性质",
+            tags: ["体积光 (Volumetric Lighting)", "上帝光/耶稣光 (God Rays)", "丁达尔效应 (Tyndall Effect)", "硬光 (Hard Light)", "柔光 (Soft Light)", "斑驳光/树影光"]
+        },
+        {
+            title: "🎨 影调与色彩",
+            tags: ["高调光", "低调光", "平光", "高反差/明暗对照", "黄金时刻", "蓝调时刻", "霓虹光/赛博朋克光", "冷色调", "暖色调", "青橙色调", "漂白替代色调"]
+        },
+        {
+            title: "🔍 镜头特效",
+            tags: ["镜头光晕 (Lens Flare)", "变形宽银幕光晕", "散景/光斑 (Bokeh)", "焦散 (Caustics)", "胶片红晕 (Halation)"]
+        },
+        {
+            title: "🖥️ 画质与渲染",
+            tags: ["电影感 (Cinematic)", "杰作 (Masterpiece)", "8K分辨率", "极致细节", "虚幻引擎5渲染 (UE5)", "Octane渲染", "ARRI Alexa 65 拍摄", "柯达 Portra 400", "35mm镜头", "85mm镜头"]
+        }
+    ];
+
+    const toolbox = document.getElementById('toolbox');
+    const editor = document.getElementById('promptEditor');
+
+    // 渲染标签
+    data.forEach(category => {
+        const card = document.createElement('div');
+        card.className = 'category-card';
+        
+        const title = document.createElement('div');
+        title.className = 'category-title';
+        title.textContent = category.title;
+        card.appendChild(title);
+
+        const tagsContainer = document.createElement('div');
+        tagsContainer.className = 'tags-container';
+
+        category.tags.forEach(tagText => {
+            const tag = document.createElement('span');
+            tag.className = 'tag';
+            tag.textContent = tagText;
+            tag.onclick = () => insertText(tagText);
+            tagsContainer.appendChild(tag);
+        });
+
+        card.appendChild(tagsContainer);
+        toolbox.appendChild(card);
+    });
+
+    // 插入文本到光标位置
+    function insertText(text) {
+        const textToInsert = text + "，";
+        const startPos = editor.selectionStart;
+        const endPos = editor.selectionEnd;
+        const currentText = editor.value;
+
+        // 如果编辑器是空的，或者光标在最后，直接追加
+        if (currentText.length === 0 || startPos === currentText.length) {
+            editor.value += (currentText.length > 0 && !currentText.endsWith('，') && !currentText.endsWith(',') ? '，' : '') + textToInsert;
+        } else {
+            // 在光标位置插入
+            editor.value = currentText.substring(0, startPos) + textToInsert + currentText.substring(endPos, currentText.length);
+        }
+
+        // 重新聚焦并调整光标位置
+        editor.focus();
+        const newPos = startPos + textToInsert.length;
+        editor.setSelectionRange(newPos, newPos);
+    }
+
+    // 清空编辑器
+    function clearText() {
+        editor.value = '';
+        editor.focus();
+    }
+
+    // 复制功能与提示
+    function copyText() {
+        if (!editor.value.trim()) return;
+        
+        navigator.clipboard.writeText(editor.value).then(() => {
+            const toast = document.getElementById('toast');
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }).catch(err => {
+            console.error('复制失败:', err);
+        });
+    }
+</script>
+
+</body>
+</html>
